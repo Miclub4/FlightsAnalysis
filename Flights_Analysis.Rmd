@@ -1,0 +1,194 @@
+---
+title: 'Project 1: Airlines'
+author: 'Michał Lubczyński'
+date: '01.04.2022'
+output:
+  pdf_document: default
+---
+
+
+```{r include = FALSE}
+library(DBI)
+library(kableExtra)
+db <- 'dwbd_flights' 
+host_db <- # University database
+db_port <- 5432
+db_user <- rstudioapi::askForPassword("Database user")
+db_password <- rstudioapi::askForPassword("Database password")
+con <- dbConnect(RPostgres::Postgres(), dbname = db, host=host_db, port=db_port, user=db_user, password=db_password)
+```
+
+
+**a) What was the average arrival delay?**\
+```{sql connection=con, output.var = "a", echo = TRUE, results = "hide"}
+SELECT avg(arr_delay_new) as avg_delay
+FROM "Flight_delays"
+```
+```{r echo = FALSE}
+kableExtra::kable(a, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+
+**b) What was the maximum arrival delay?**\
+```{sql connection=con, output.var = "b", echo = TRUE, results = "hide"}
+SELECT max(arr_delay_new)
+FROM "Flight_delays"
+```
+```{r echo = FALSE}
+kableExtra::kable(b, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+
+**c) Which flight had the biggest delay in arrival?**\
+```{sql connection=con, output.var = "c", echo = TRUE, results = "show"}
+SELECT carrier, 
+        origin_city_name,
+        dest_city_name,
+        fl_date,
+        arr_delay_new
+FROM "Flight_delays"
+WHERE arr_delay_new IN (SELECT MAX(arr_delay_new)
+                            FROM "Flight_delays")
+```
+```{r echo = FALSE}
+kableExtra::kable(c, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**d) Which days of the week are the worst to travel?**\
+```{sql connection=con, output.var = "d", echo = TRUE, results = "hide"}
+SELECT weekday_name, 
+        AVG(arr_delay_new) AS avg_delay
+FROM "Weekdays" 
+   JOIN "Flight_delays" ON weekday_id = day_of_week
+GROUP BY weekday_name 
+ORDER BY avg_delay DESC
+```
+```{r echo = FALSE}
+kableExtra::kable(d, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**e) Which airlines flying from San Francisco (SFO) have the lowest arrival delay?**\
+```{sql connection=con, output.var = "e", echo = TRUE, results = "hide"}
+SELECT AL.airline_name, 
+        avg(FD.arr_delay_new) AS avg_delay
+FROM "Flight_delays" FD
+    JOIN "Airlines" AL ON FD.airline_id = AL.airline_id 
+WHERE FD.airline_id IN (SELECT airline_id 
+                        FROM "Flight_delays"
+                        WHERE origin = 'SFO')
+GROUP BY airline_name
+ORDER BY avg_delay DESC
+```
+```{r echo = FALSE}
+kableExtra::kable(e, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**f) What proportion of airlines has regular delays, i.e., their flight has an average delay of at least 10 minutes?**\
+```{sql connection=con, output.var = "f", echo = TRUE, results = "hide"}
+SELECT (count(DISTINCT FD2.airline_id)*1.0)
+        /count(DISTINCT FD1.airline_id) AS late_proportion
+FROM "Flight_delays" FD1
+    JOIN "Flight_delays" FD2 ON FD1.fl_num = FD2.fl_num
+    WHERE FD2.airline_id IN (SELECT airline_id
+                                FROM "Flight_delays"
+                                GROUP BY airline_id
+                                HAVING AVG(arr_delay_new)>10)
+```
+```{r echo = FALSE}
+kableExtra::kable(f, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**g) How do departure delays affect arrival delays?**\
+Pearson correlation coefficient between departure delay time and arrival delay time.\
+```{sql connection=con, output.var = "g", echo = TRUE, results = "hide"}
+SELECT ((SUM(dep_delay_new * arr_delay_new)
+     - (SUM(dep_delay_new) * SUM(arr_delay_new)) / COUNT(*)
+    )
+   )
+   / (SQRT(SUM(dep_delay_new * dep_delay_new)
+           - (SUM(dep_delay_new) * SUM (dep_delay_new)) / COUNT(*)
+          )
+      * SQRT(SUM(arr_delay_new * arr_delay_new)
+             - (SUM(arr_delay_new) * SUM(arr_delay_new)) / COUNT(*)
+            )
+     ) AS Pearsons_r
+FROM "Flight_delays"
+```
+```{r echo = FALSE}
+kableExtra::kable(g, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**h) Which airline had the largest increase in average arrival delay during the last week of the month, i.e., between July 1-23 and July 24-31?**\
+```{sql connection=con, output.var = "h", echo = TRUE, results = "hide"}
+SELECT AL.airline_name, 
+        avg(FD1.arr_delay_new)
+        -avg(FD2.arr_delay_new) AS delay_increase
+FROM "Flight_delays" FD1
+    JOIN "Flight_delays" FD2 ON FD1.airline_id = FD2.airline_id
+    AND FD2.day_of_month<24 AND FD1.day_of_month>=24
+    JOIN "Airlines" AL ON FD1.airline_id = AL.airline_id 
+GROUP BY AL.airline_name
+ORDER BY delay_increase DESC 
+LIMIT 1
+```
+```{r echo = FALSE}
+kableExtra::kable(h, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**i) Which airlines fly both SFO -> PDX (Portland) and SFO -> EUG (Eugene)?**\
+```{sql connection=con, output.var = "i", echo = TRUE, results = "hide"}
+SELECT DISTINCT airline_name
+FROM "Airlines" AL
+    Left JOIN "Flight_delays" FD ON AL.airline_id = FD.airline_id
+    AND FD.dest ='EUG'
+WHERE FD.origin = 'SFO' AND AL.airline_id IN (SELECT airline_id
+                                                FROM "Flight_delays"
+                                                WHERE dest = 'PDX')
+```
+```{r echo = FALSE}
+kableExtra::kable(i, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
+
+
+**j) What is the fastest way to get from Chicago to Stanford, assuming departure after 2pm local time?**\
+```{sql connection=con, output.var = "j", echo = TRUE, results = "hide"}
+SELECT origin,
+        dest,
+        avg(arr_delay_new) AS avg_delay
+FROM "Flight_delays" 
+WHERE origin IN ('MDW','ORD') 
+AND dest IN ('SFO','SJC','OAK')
+AND crs_dep_time > 1400
+GROUP BY origin,
+        dest
+ORDER BY avg_delay desc
+```
+```{r echo = FALSE}
+kableExtra::kable(j, booktabs = T) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(latex_options = c("hold_position")) 
+```
