@@ -12,7 +12,7 @@ library(DBI)
 library(kableExtra)
 db <- 'dwbd_flights' 
 host_db <- # University database
-db_port <- 5432
+db_port <- # Port
 db_user <- rstudioapi::askForPassword("Database user")
 db_password <- rstudioapi::askForPassword("Database password")
 con <- dbConnect(RPostgres::Postgres(), dbname = db, host=host_db, port=db_port, user=db_user, password=db_password)
@@ -27,7 +27,7 @@ FROM "Flight_delays"
 ```{r echo = FALSE}
 kableExtra::kable(a, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position"))
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -39,7 +39,7 @@ FROM "Flight_delays"
 ```{r echo = FALSE}
 kableExtra::kable(b, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position"))
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -57,7 +57,7 @@ WHERE arr_delay_new IN (SELECT MAX(arr_delay_new)
 ```{r echo = FALSE}
 kableExtra::kable(c, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -73,7 +73,7 @@ ORDER BY avg_delay DESC
 ```{r echo = FALSE}
 kableExtra::kable(d, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -92,7 +92,7 @@ ORDER BY avg_delay DESC
 ```{r echo = FALSE}
 kableExtra::kable(e, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -110,7 +110,7 @@ FROM "Flight_delays" FD1
 ```{r echo = FALSE}
 kableExtra::kable(f, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -133,7 +133,7 @@ FROM "Flight_delays"
 ```{r echo = FALSE}
 kableExtra::kable(g, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -153,7 +153,7 @@ LIMIT 1
 ```{r echo = FALSE}
 kableExtra::kable(h, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -170,7 +170,7 @@ WHERE FD.origin = 'SFO' AND AL.airline_id IN (SELECT airline_id
 ```{r echo = FALSE}
 kableExtra::kable(i, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position")
 ```
 
 
@@ -190,5 +190,5 @@ ORDER BY avg_delay desc
 ```{r echo = FALSE}
 kableExtra::kable(j, booktabs = T) %>%
   row_spec(0, bold = T) %>%
-  kable_styling(latex_options = c("hold_position")) 
+  kable_styling(latex_options = "hold_position"))
 ```
